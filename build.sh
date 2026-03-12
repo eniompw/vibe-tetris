@@ -1,3 +1,3 @@
 #!/bin/bash
-pip install pygame pygbag
+pip install --break-system-packages pygame pygbag
 pygbag --build main.py
