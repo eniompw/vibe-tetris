@@ -7,11 +7,12 @@ A classic Tetris game built with Python and Pygame, featuring modern gameplay me
 ## Features
 
 - **Ghost Piece** — transparent drop shadow shows where the piece will land
-- **Hold Piece** — stash the current piece and swap it back later
+- **Hold Piece** — stash the current piece and swap it back later (once per drop)
 - **Level System** — speed increases as you clear more lines
 - **Wall Kicks** — rotation nudges pieces away from walls/obstacles automatically
 - **Line Clear Animation** — cleared rows flash before disappearing
 - **Pause** — freeze the game at any time
+- **Resizable Window + Fullscreen** — play windowed, resize freely, or toggle fullscreen with F11
 - **Standard Tetris Scoring** — singles, doubles, triples, and Tetrises with level multiplier
 
 ## Requirements
@@ -41,6 +42,7 @@ python tetris.py
 | Space | Hard drop (+2 points per cell) |
 | C | Hold piece |
 | P / Esc | Pause / Unpause |
+| F11 | Toggle fullscreen |
 | R | Restart (after game over) |
 
 ## Scoring

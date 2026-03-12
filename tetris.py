@@ -81,7 +81,11 @@ class Tetromino:
 
 class TetrisApp:
     def __init__(self):
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.fullscreen = False
+        self.windowed = True  # True when in normal windowed mode (not maximized/fullscreen)
+        self.game_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
+        self.draw_target = self.screen  # surface all drawing goes to
         pygame.display.set_caption("Tetris")
         self.clock = pygame.time.Clock()
         self.init_game()
@@ -114,21 +118,35 @@ class TetrisApp:
 
     # ─── Drawing ──────────────────────────────────────────
 
+    def toggle_fullscreen(self):
+        """Toggle between windowed and fullscreen mode."""
+        self.fullscreen = not self.fullscreen
+        if self.fullscreen:
+            self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        else:
+            self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
+        self.windowed = not self.fullscreen
+
+    def _needs_scaling(self):
+        """Check if the screen size differs from the native game size."""
+        sw, sh = self.screen.get_size()
+        return sw != SCREEN_WIDTH or sh != SCREEN_HEIGHT
+
     def draw_block(self, screen_x, screen_y, color, is_grid=False, ghost=False):
         if color == BLACK:
             if is_grid:
-                pygame.draw.rect(self.screen, DARK_GRAY,
+                pygame.draw.rect(self.draw_target, DARK_GRAY,
                                  [screen_x, screen_y, BLOCK_SIZE, BLOCK_SIZE], 1)
             return
 
         if ghost:
             # Draw ghost piece as an outline only
-            pygame.draw.rect(self.screen, color,
+            pygame.draw.rect(self.draw_target, color,
                              [screen_x + 2, screen_y + 2, BLOCK_SIZE - 4, BLOCK_SIZE - 4], 2)
             return
 
         # Filled block with 3D bevel effect
-        pygame.draw.rect(self.screen, color,
+        pygame.draw.rect(self.draw_target, color,
                          [screen_x, screen_y, BLOCK_SIZE, BLOCK_SIZE], 0)
 
         r, g, b = color
@@ -138,28 +156,28 @@ class TetrisApp:
         t = 4  # bevel thickness
 
         # Top highlight
-        pygame.draw.polygon(self.screen, light, [
+        pygame.draw.polygon(self.draw_target, light, [
             (screen_x, screen_y),
             (screen_x + BLOCK_SIZE, screen_y),
             (screen_x + BLOCK_SIZE - t, screen_y + t),
             (screen_x + t, screen_y + t)
         ])
         # Left highlight
-        pygame.draw.polygon(self.screen, light, [
+        pygame.draw.polygon(self.draw_target, light, [
             (screen_x, screen_y),
             (screen_x + t, screen_y + t),
             (screen_x + t, screen_y + BLOCK_SIZE - t),
             (screen_x, screen_y + BLOCK_SIZE)
         ])
         # Bottom shadow
-        pygame.draw.polygon(self.screen, dark, [
+        pygame.draw.polygon(self.draw_target, dark, [
             (screen_x, screen_y + BLOCK_SIZE),
             (screen_x + t, screen_y + BLOCK_SIZE - t),
             (screen_x + BLOCK_SIZE - t, screen_y + BLOCK_SIZE - t),
             (screen_x + BLOCK_SIZE, screen_y + BLOCK_SIZE)
         ])
         # Right shadow
-        pygame.draw.polygon(self.screen, dark, [
+        pygame.draw.polygon(self.draw_target, dark, [
             (screen_x + BLOCK_SIZE, screen_y),
             (screen_x + BLOCK_SIZE, screen_y + BLOCK_SIZE),
             (screen_x + BLOCK_SIZE - t, screen_y + BLOCK_SIZE - t),
@@ -167,10 +185,10 @@ class TetrisApp:
         ])
 
         # Inner fill
-        pygame.draw.rect(self.screen, color,
+        pygame.draw.rect(self.draw_target, color,
                          [screen_x + t, screen_y + t, BLOCK_SIZE - 2 * t, BLOCK_SIZE - 2 * t], 0)
         # Outer border
-        pygame.draw.rect(self.screen, BLACK,
+        pygame.draw.rect(self.draw_target, BLACK,
                          [screen_x, screen_y, BLOCK_SIZE, BLOCK_SIZE], 1)
 
     def draw_grid(self):
@@ -179,14 +197,14 @@ class TetrisApp:
             if y in self.clearing_rows:
                 if self.clear_flash_on:
                     for x in range(GRID_WIDTH):
-                        pygame.draw.rect(self.screen, WHITE,
+                        pygame.draw.rect(self.draw_target, WHITE,
                                          [x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE])
                     continue
             for x in range(GRID_WIDTH):
                 self.draw_block(x * BLOCK_SIZE, y * BLOCK_SIZE, self.grid[y][x], is_grid=True)
 
         # Grid border
-        pygame.draw.rect(self.screen, GRAY,
+        pygame.draw.rect(self.draw_target, GRAY,
                          [0, 0, GRID_PIXEL_WIDTH, SCREEN_HEIGHT], 2)
 
     def draw_piece(self, piece):
@@ -252,24 +270,24 @@ class TetrisApp:
 
         # ── Hold ──
         label = font_lg.render("HOLD", True, WHITE)
-        self.screen.blit(label, (panel_x, 10))
+        self.draw_target.blit(label, (panel_x, 10))
         # Box
         box_x = panel_x
         box_y = 38
         box_w = 4 * BLOCK_SIZE + 10
         box_h = 3 * BLOCK_SIZE + 6
-        pygame.draw.rect(self.screen, DARK_GRAY, [box_x, box_y, box_w, box_h])
-        pygame.draw.rect(self.screen, GRAY, [box_x, box_y, box_w, box_h], 1)
+        pygame.draw.rect(self.draw_target, DARK_GRAY, [box_x, box_y, box_w, box_h])
+        pygame.draw.rect(self.draw_target, GRAY, [box_x, box_y, box_w, box_h], 1)
         if self.held_piece is not None:
             self.draw_mini_piece(self.held_piece, box_x + 5, box_y + 5)
 
         # ── Next ──
         next_y = box_y + box_h + 14
         label = font_lg.render("NEXT", True, WHITE)
-        self.screen.blit(label, (panel_x, next_y))
+        self.draw_target.blit(label, (panel_x, next_y))
         nbox_y = next_y + 28
-        pygame.draw.rect(self.screen, DARK_GRAY, [box_x, nbox_y, box_w, box_h])
-        pygame.draw.rect(self.screen, GRAY, [box_x, nbox_y, box_w, box_h], 1)
+        pygame.draw.rect(self.draw_target, DARK_GRAY, [box_x, nbox_y, box_w, box_h])
+        pygame.draw.rect(self.draw_target, GRAY, [box_x, nbox_y, box_w, box_h], 1)
         self.draw_mini_piece(self.next_piece, box_x + 5, nbox_y + 5)
 
         # ── Score / Level / Lines ──
@@ -277,13 +295,13 @@ class TetrisApp:
         for i, (lbl, val) in enumerate([("SCORE", self.score), ("LEVEL", self.level), ("LINES", self.lines_cleared)]):
             y_off = stats_y + i * 44
             t = font_md.render(lbl, True, GRAY)
-            self.screen.blit(t, (panel_x, y_off))
+            self.draw_target.blit(t, (panel_x, y_off))
             v = font_lg.render(str(val), True, WHITE)
-            self.screen.blit(v, (panel_x, y_off + 20))
+            self.draw_target.blit(v, (panel_x, y_off + 20))
 
         # ── Controls ──
         ctrl_y = stats_y + 3 * 44 + 10
-        pygame.draw.line(self.screen, GRAY, (panel_x, ctrl_y), (panel_x + panel_w - 10, ctrl_y))
+        pygame.draw.line(self.draw_target, GRAY, (panel_x, ctrl_y), (panel_x + panel_w - 10, ctrl_y))
         ctrl_y += 6
         controls = [
             "← →   Move",
@@ -292,34 +310,35 @@ class TetrisApp:
             "Space  Hard Drop",
             "C       Hold",
             "P       Pause",
+            "F11    Fullscreen",
         ]
         for i, line in enumerate(controls):
             t = font_sm.render(line, True, GRAY)
-            self.screen.blit(t, (panel_x, ctrl_y + i * 20))
+            self.draw_target.blit(t, (panel_x, ctrl_y + i * 20))
 
         # ── Overlays ──
         if self.paused and not self.game_over:
             overlay = pygame.Surface((GRID_PIXEL_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
             overlay.fill((0, 0, 0, 150))
-            self.screen.blit(overlay, (0, 0))
+            self.draw_target.blit(overlay, (0, 0))
             pause_font = get_font(48, bold=True)
             txt = pause_font.render("PAUSED", True, WHITE)
             rect = txt.get_rect(center=(GRID_PIXEL_WIDTH // 2, SCREEN_HEIGHT // 2))
-            self.screen.blit(txt, rect)
+            self.draw_target.blit(txt, rect)
 
         if self.game_over:
             overlay = pygame.Surface((GRID_PIXEL_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
             overlay.fill((0, 0, 0, 170))
-            self.screen.blit(overlay, (0, 0))
+            self.draw_target.blit(overlay, (0, 0))
             go_font = get_font(40, bold=True)
             go_text = go_font.render("GAME OVER", True, RED)
             rect = go_text.get_rect(center=(GRID_PIXEL_WIDTH // 2, SCREEN_HEIGHT // 2 - 20))
-            self.screen.blit(go_text, rect)
+            self.draw_target.blit(go_text, rect)
 
             r_font = get_font(25, bold=True)
             r_text = r_font.render("Press 'R' to Restart", True, WHITE)
             r_rect = r_text.get_rect(center=(GRID_PIXEL_WIDTH // 2, SCREEN_HEIGHT // 2 + 20))
-            self.screen.blit(r_text, r_rect)
+            self.draw_target.blit(r_text, r_rect)
 
     # ─── Game Logic ──────────────────────────────────────
 
@@ -448,7 +467,14 @@ class TetrisApp:
     def run(self):
         running = True
         while running:
-            self.screen.fill(BLACK)
+            # Set draw_target: when scaled we draw to game_surface first, then scale
+            needs_scale = self._needs_scaling()
+            if needs_scale:
+                self.draw_target = self.game_surface
+            else:
+                self.draw_target = self.screen
+
+            self.draw_target.fill(BLACK)
             time_delta = self.clock.tick(60)
 
             # ── Line-clear animation update ──
@@ -475,8 +501,14 @@ class TetrisApp:
                 if event.type == pygame.QUIT:
                     running = False
 
+                if event.type == pygame.VIDEORESIZE and not self.fullscreen:
+                    self.screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
+                    self.windowed = (event.w == SCREEN_WIDTH and event.h == SCREEN_HEIGHT)
+
                 if event.type == pygame.KEYDOWN:
-                    if self.game_over:
+                    if event.key == pygame.K_F11:
+                        self.toggle_fullscreen()
+                    elif self.game_over:
                         if event.key == pygame.K_r:
                             self.init_game()
                     elif event.key in (pygame.K_p, pygame.K_ESCAPE):
@@ -509,6 +541,28 @@ class TetrisApp:
                 self.draw_piece(self.current_piece)
 
             self.draw_ui()
+
+            # ── Present to screen ──
+            if needs_scale:
+                # Scale game_surface to fit the screen, preferring integer multiples
+                self.screen.fill(BLACK)
+                sw, sh = self.screen.get_size()
+                # Find the largest integer scale that fits
+                int_scale = max(1, min(sw // SCREEN_WIDTH, sh // SCREEN_HEIGHT))
+                new_w = SCREEN_WIDTH * int_scale
+                new_h = SCREEN_HEIGHT * int_scale
+                # If integer scale is too small (<50% of screen), use fractional smoothscale
+                if new_w < sw * 0.5 or new_h < sh * 0.5:
+                    frac_scale = min(sw / SCREEN_WIDTH, sh / SCREEN_HEIGHT)
+                    new_w = int(SCREEN_WIDTH * frac_scale)
+                    new_h = int(SCREEN_HEIGHT * frac_scale)
+                    scaled = pygame.transform.smoothscale(self.game_surface, (new_w, new_h))
+                else:
+                    scaled = pygame.transform.scale(self.game_surface, (new_w, new_h))
+                x_off = (sw - new_w) // 2
+                y_off = (sh - new_h) // 2
+                self.screen.blit(scaled, (x_off, y_off))
+
             pygame.display.flip()
 
         pygame.quit()
