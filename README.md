@@ -43,7 +43,8 @@ python main.py
 This game has been fully updated with `asyncio` to run natively in your web browser. To launch the web version of the game:
 
 ```bash
-pygbag main.py
+# Recommended: Run within a virtual environment
+python -m pygbag main.py
 ```
 *Note: If you run this in a remote environment like GitHub Codespaces, you may need to run `cd build/web && python3 -m http.server 8080`, and make sure your forwarded port is set to **Public** to avoid CORS issues.*
 
