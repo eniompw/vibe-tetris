@@ -1,7 +1,6 @@
 import pygame
 import random
-
-pygame.init()
+import asyncio
 
 # Colors
 BLACK = (0, 0, 0)
@@ -464,7 +463,7 @@ class TetrisApp:
 
     # ─── Main Loop ────────────────────────────────────────
 
-    def run(self):
+    async def run(self):
         running = True
         while running:
             # Set draw_target: when scaled we draw to game_surface first, then scale
@@ -564,10 +563,18 @@ class TetrisApp:
                 self.screen.blit(scaled, (x_off, y_off))
 
             pygame.display.flip()
+            
+            # Add this so the browser can update its UI!
+            await asyncio.sleep(0)
 
         pygame.quit()
 
 
-if __name__ == '__main__':
+async def main():
+    pygame.init()
     app = TetrisApp()
-    app.run()
+    await app.run()
+
+
+if __name__ == '__main__':
+    asyncio.run(main())

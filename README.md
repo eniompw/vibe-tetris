@@ -19,18 +19,45 @@ A classic Tetris game built with Python and Pygame, featuring modern gameplay me
 
 - Python 3.x
 - Pygame 2.x
+- (*Optional*) Pygbag (for WebAssembly/browser support)
 
 ## Installation
 
 ```bash
+# Core requirements for Desktop
 pip install pygame
+
+# Optional: To build and run in the browser
+pip install pygbag
 ```
 
 ## How to Play
 
+### 🖥️ Desktop Player
+Run the game locally like any standard Python script:
 ```bash
-python tetris.py
+python main.py
 ```
+
+### 🌐 Web Browser (WASM)
+This game has been fully updated with `asyncio` to run natively in your web browser. To launch the web version of the game:
+
+```bash
+pygbag main.py
+```
+*Note: If you run this in a remote environment like GitHub Codespaces, you may need to run `cd build/web && python3 -m http.server 8080`, and make sure your forwarded port is set to **Public** to avoid CORS issues.*
+
+## Deployment (Vercel)
+
+This repository comes pre-configured to be easily deployed as a web application via [Vercel](https://vercel.com).
+
+1. Push your code to GitHub.
+2. Log into Vercel and click **Add New** -> **Project**.
+3. Import your GitHub repository.
+4. Keep all default configurations (Vercel will automatically read the included `vercel.json` and `build.sh`).
+5. Click **Deploy**.
+
+Vercel will install Pygbag, compile the game to WebAssembly, and host the web version on a live public URL!
 
 ## Controls
 
